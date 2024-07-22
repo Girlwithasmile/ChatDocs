@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Files</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Chat with PDF, PPT, and DOCX using Gemini</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="files" multiple><br>
+            <button type="button" onclick="uploadFiles()">Submit & Process</button>
+            <button type="button" onclick="summarizeFiles()">Summarize</button>
+        </form>
+        <div class="response">
+            <h2>Summary:</h2>
+            <pre id="summaryText"></pre>
+        </div>
+        <form id="questionForm">
+            <input type="text" id="question" name="question" placeholder="Ask a question from the files">
+            <button type="button" onclick="askQuestion()">Ask</button>
+        </form>
+        <div class="response">
+            <h2>Response:</h2>
+            <pre id="responseText"></pre>
+        </div>
+    </div>
+    <script>
+        let filesData = new FormData();  // Store files data globally
+
+        function uploadFiles() {
+            const formData = new FormData(document.getElementById('uploadForm'));
+            filesData = formData;  // Store files data for later use
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.summary) {
+                    document.getElementById('summaryText').innerText = `Summary: ${data.summary}`;
+                } else if (data.error) {
+                    document.getElementById('summaryText').innerText = `Error: ${data.error}`;
+                }
+            });
+        }
+
+        function summarizeFiles() {
+            fetch('/summarize', {
+                method: 'POST',
+                body: filesData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.summary) {
+                    document.getElementById('summaryText').innerText = `Summary: ${data.summary}`;
+                } else if (data.error) {
+                    document.getElementById('summaryText').innerText = `Error: ${data.error}`;
+                }
+            });
+        }
+
+        function askQuestion() {
+            const question = document.getElementById('question').value;
+            fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ 'question': question })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.answer) {
+                    document.getElementById('responseText').innerText = `Answer: ${data.answer}`;
+                } else if (data.error) {
+                    document.getElementById('responseText').innerText = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('responseText').innerText = `Error: ${error}`;
+            });
+        }
+    </script>
+</body>
+</html>
